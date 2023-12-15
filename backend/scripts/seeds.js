@@ -1,42 +1,38 @@
-//TODO: seeds script should come here, so we'll be able to put some data in our local env
 const mongoose = require("mongoose");
-const connectionUri = "mongodb://localhost:27017/anythink-market";
-mongoose.connect(connectionUri);
+const connection = process.env.MONGODB_URI;
+mongoose.connect(connection);
 
 const User = mongoose.model("User");
 const Item = mongoose.model("Item");
 const Comment = mongoose.model("Comment");
+
 const options = { upsert: true, new: true };
 async function seedDatabase() {
   for (let i = 0; i < 100; i++) {
-    const user = {
-      username: `user${i}`,
-      email: `user${i}gmail.com`,
-    };
-
-    const createdUser = await User.findAndUpdate(user, {}, options);
-
+    const user = { username: `user${i}`, email: `user${i}@gmail.com` };
+    const options = { upsert: true, new: true };
+    const createdUser = await User.findOneAndUpdate(user, {}, options);
+    
     const item = {
-      slug: `item${i}`,
-      description: `description${i}`,
+      slug: `slug${i}`,
+      title: `title ${i}`,
+      description: `description ${i}`,
       seller: createdUser,
-      title: `title${i}`,
     };
-
-    const createdItem = await Item.findAndUpdate(item, {}, options);
-
+    const createdItem = await Item.findOneAndUpdate(item, {}, options);
+    
     if (!createdItem?.comments?.length) {
-      let commentsIds = [];
+      let commentIds = [];
       for (let j = 0; j < 100; j++) {
         const comment = new Comment({
-          body: `awesome comment${j}}`,
+          body: `body ${j}`,
           seller: createdUser,
           item: createdItem,
         });
         await comment.save();
-        commentsIds.push(comment._id);
+        commentIds.push(comment._id);
       }
-      createdItem.comments = commentsIds;
+      createdItem.comments = commentIds;
       await createdItem.save();
     }
   }
